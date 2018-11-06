@@ -9,7 +9,8 @@ from rest_framework.views import APIView
 from rest_framework_jwt.settings import api_settings
 from usermgmt.backends import JSONWebTokenAuthentication
 
-from ..serializers import LoginSerializer, UserSerializer
+from ..serializers import (LoginSerializer, PersonalInfoSerializer,
+                           UserSerializer)
 
 # Get the JWT settings, add these lines after the import/from lines
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
@@ -89,3 +90,63 @@ class UserDetailsAPIVew(APIView):
         serializer = self.serializer_class(request.user)
         return Response({"data": serializer.data, "message": "OK",
                          "success": True})
+
+
+class PersonalInfoAPIView(APIView):
+    authentication_classes = (JSONWebTokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+    personal_info_serializer_class = PersonalInfoSerializer
+    user_serializer_class = UserSerializer
+
+    def get(self, request):
+        user = request.user
+        try:
+            personal_info = user.personalinfo
+            personal_info_serializer_data = self.personal_info_serializer_class(
+                personal_info).data
+        except:
+            personal_info_serializer_data = {}
+        user_serializer_data = self.user_serializer_class(user).data
+        return Response({"user_data": user_serializer_data, "personal_data": personal_info_serializer_data, "message": "OK",
+                         "success": True}, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        request_data = request.data
+        user = request.user
+        try:
+            personal_info = user.personalinfo
+            return Response({"success": False,
+                             "message": "Personal infor is already created."})
+        except:
+            personal_info_serializer = self.personal_info_serializer_class(
+                data=request_data, context={"user": user})
+            if not personal_info_serializer.is_valid():
+                return Response({"success": False,
+                                 "errors": personal_info_serializer.errors})
+            personal_info = personal_info_serializer.save()
+            user_serializer_data = self.user_serializer_class(user).data
+            return Response(
+                {"success": True, "personal_info": request_data,
+                 "user_data": user_serializer_data,
+                 "message": "Personal info created successfully."})
+
+    def put(self, request):
+        request_data = request.data
+        user = request.user
+        try:
+            personal_info = user.personalinfo
+            personal_info_serializer = self.personal_info_serializer_class(
+                personal_info, data=request_data, context={"user": user})
+            if not personal_info_serializer.is_valid():
+                return Response({"success": False,
+                                 "errors": personal_info_serializer.errors,
+                                 "message": "Wrong request data"})
+            personal_info = personal_info_serializer.save()
+            user_serializer_data = self.user_serializer_class(user).data
+            return Response(
+                {"success": True, "personal_info": request_data,
+                 "user_data": user_serializer_data,
+                 "message": "Personal info updated successfully."})
+        except:
+            return Response({"success": False,
+                             "message": "Personal info is not found."})

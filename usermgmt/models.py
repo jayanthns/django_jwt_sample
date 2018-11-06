@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.db import models
-from django.contrib.auth.models import (
-    AbstractBaseUser,
-    BaseUserManager,
-)
+from django.utils.translation import ugettext_lazy as _
 
 # Create your models here.
 
@@ -104,3 +102,25 @@ class User(AbstractBaseUser):
         return self.active
 
     objects = UserManager()
+
+
+class PersonalInfo(models.Model):
+    user = models.OneToOneField(User, verbose_name=_(
+        "personal_info"), on_delete=models.CASCADE)
+    address1 = models.TextField(_("address1"))
+    address2 = models.TextField(_("address2"), blank=True, null=True)
+    secondary_email = models.EmailField(
+        _("secondary_email"), max_length=254, blank=True, null=True)
+    mobile_number = models.CharField(_("mobile_number"), max_length=20)
+    state = models.CharField(_("state"), max_length=200, blank=True, null=True)
+    city = models.CharField(_("city"), max_length=200, blank=True, null=True)
+    country = models.CharField(
+        _("country"), max_length=200, blank=True, null=True)
+    dob = models.DateTimeField(
+        _("dob"), auto_now=False, auto_now_add=False, blank=True, null=True)
+    gender = models.CharField(
+        _("gender"), max_length=50, blank=True, null=True)
+    created_at = models.DateTimeField(
+        _("created_at"), auto_now=False, auto_now_add=True)
+    updated_at = models.DateTimeField(
+        _("updated_at"), auto_now=True, auto_now_add=False)
